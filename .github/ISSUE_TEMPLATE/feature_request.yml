@@ -1,0 +1,57 @@
+
+name: Feature request
+description: Propose a small, testable feature.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem needs to be solved?
+      placeholder: Developers need to prioritize tasks.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should the application do?
+      placeholder: A task can have a priority.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List testable outcomes.
+      placeholder: |
+        - A task has a priority.
+        - Invalid values are rejected.
+        - Unit tests cover both cases.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Change risk
+      options:
+        - Low
+        - Medium
+        - High
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I have not included secrets or sensitive data.
+          required: true
+        - label: The expected behavior can be tested.
+          required: true

@@ -6,6 +6,7 @@ from openai import OpenAI
 
 
 def create_llm_plan(request: str) -> dict:
+    """Ask an OpenAI model for a structured development plan."""
     if not request.strip():
         raise ValueError("Feature request cannot be empty.")
 
@@ -22,53 +23,21 @@ def create_llm_plan(request: str) -> dict:
         model=model,
         instructions=(
             "You are a software planning agent. "
-            "Do not claim that code has been changed."
+            "Return valid JSON with exactly these required fields: "
+            "summary, steps, acceptance_criteria, risks. "
+            "The last three fields must be arrays of strings. "
+            "Do not claim that code has been modified."
         ),
         input=request,
-        text={
-            "format": {
-                "type": "json_schema",
-                "name": "software_plan",
-                "strict": True,
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "summary": {"type": "string"},
-                        "steps": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                        },
-                        "acceptance_criteria": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                        },
-                        "risks": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                        },
-                    },
-                    "required": [
-                        "summary",
-                        "steps",
-                        "acceptance_criteria",
-                        "risks",
-                    ],
-                    "additionalProperties": False,
-                },
-            }
-        },
     )
 
-    output_text = response.output_text.strip()
-    if not output_text:
-        details = response.incomplete_details
-        detail_text = f" Details: {details}" if details else ""
-        raise RuntimeError(f"The LLM returned no text.{detail_text}")
-
     try:
-        result = json.loads(output_text)
-    except json.JSONDecodeError as exc:
-        raise ValueError("The LLM returned invalid JSON.") from exc
+        result = json.loads(response.output_text)
+    except json.JSONDecodeError as error:
+        raise ValueError("The model did not return valid JSON.") from error
+
+    if not isinstance(result, dict):
+        raise ValueError("The model response must be a JSON object.")
 
     required = {
         "summary",
@@ -77,14 +46,19 @@ def create_llm_plan(request: str) -> dict:
         "risks",
     }
 
-    if not isinstance(result, dict) or not required.issubset(result):
-        raise ValueError("The LLM returned an invalid plan structure.")
+    if not required.issubset(result):
+        raise ValueError("The model response is missing required fields.")
 
-    for key in ("steps", "acceptance_criteria", "risks"):
-        if not isinstance(result[key], list) or not all(
-            isinstance(item, str) for item in result[key]
-        ):
-            raise ValueError(f"Invalid list field: {key}")
+    for field in ("summary",):
+        if not isinstance(result[field], str):
+            raise ValueError(f"{field} must be a string.")
+
+    for field in ("steps", "acceptance_criteria", "risks"):
+        if not isinstance(result[field], list):
+            raise ValueError(f"{field} must be a list.")
+
+        if not all(isinstance(item, str) for item in result[field]):
+            raise ValueError(f"Every item in {field} must be a string.")
 
     return result
 

@@ -1,0 +1,10 @@
+
+{
+  "servers": {
+    "dev-agent-tools": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["mcp/server.py"]
+    }
+  }
+}
